@@ -62,8 +62,8 @@ ExecStart=/usr/local/bin/node_exporter --collector.systemd --collector.processes
 ## 💻 Cara Penggunaan
 1. Clone Repositori Ini
 ```
-git clone [https://github.com/username-anda/nama-repo.git](https://github.com/username-anda/nama-repo.git)
-cd nama-repo
+https://github.com/aanabdulrohman/instal-node-exporter-with-ansible.git
+cd install-node-exporter-with-ansible
 ```
 2. Uji Koneksi (Smoke Test)
 Pastikan Ansible dapat berkomunikasi dengan target host menggunakan modul ping:
