@@ -1,0 +1,65 @@
+---
+- name: Deploy Node Exporter
+  hosts: monitoring_targets
+  become: yes
+  vars:
+    arch: "linux-amd64"
+  
+  tasks:
+    - name: Memastikan group 'node_exporter' ada
+      ansible.builtin.group:
+        name: node_exporter
+        state: present
+        system: yes
+    
+    - name: Memastikan user 'node_exporter' ada (tanpa shell dan home)
+      ansible.builtin.user:
+        name: node_exporter
+        group: node_exporter
+        shell: /usr/sbin/nologin
+        system: yes
+        create_home: no
+        state: present
+    
+    - name: Download dan Ekstrak Node Exporter biner
+      ansible.builtin.unarchive:
+        src: "https://github.com/prometheus/node_exporter/releases/download/v{{ node_exporter_version }}/node_exporter-{{ node_exporter_version }}.{{ arch }}.tar.gz"
+        dest: /home/karavan
+        remote_src: yes
+        creates: "/home/karavan/node_exporter-{{ node_exporter_version }}.{{ arch }}/node_exporter"
+    
+    - name: Memindahkan biner Node Exporter ke /usr/local/bin
+      ansible.builtin.copy:
+        src: "/home/karavan/node_exporter-{{ node_exporter_version }}.{{ arch }}/node_exporter"
+        dest: /usr/local/bin/node_exporter
+        owner: node_exporter
+        group: node_exporter
+        mode: '0755'
+        remote_src: yes
+    
+    - name: Membuat file systemd service untuk Node Exporter
+      ansible.builtin.template:
+        src: templates/node_exporter.service.j2
+        dest: /etc/systemd/system/node_exporter.service
+        owner: node_exporter
+        group: node_exporter
+        mode: '0644'
+      notify: Reload dan restart node_exporter service
+    
+    - name: Pastikan node exporter service berjalan
+      ansible.builtin.systemd:
+        name: node_exporter
+        state: started
+        enabled: yes
+
+    - name: Clean up temporary files
+      ansible.builtin.file:
+        path: "/home/karavan/node_exporter-{{ node_exporter_version }}.{{ arch }}"
+        state: absent
+
+  handlers:
+    - name: Reload dan restart node_exporter service
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        name: node_exporter
+        state: restarted
